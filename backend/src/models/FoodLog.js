@@ -18,6 +18,11 @@ const foodLogSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    meal_type: {
+  type: String,
+  enum: ['Breakfast', 'Lunch', 'Dinner', 'Snack'],
+  default: 'Breakfast',
+},
     calories: {
       type: Number,
       required: true,
@@ -43,6 +48,12 @@ const foodLogSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    quantity: {
+  type: Number,
+  required: true,
+  default: 100,
+  min: 1,
+},
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

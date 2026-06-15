@@ -19,7 +19,17 @@ export const getUserProfile = async (req, res, next) => {
 
 export const updateUserProfile = async (req, res, next) => {
   try {
-    const { name, age, gender, height_cm, weight_kg, goal } = req.body;
+    const {
+  name,
+  age,
+  gender,
+  height_cm,
+  weight_kg,
+  target_weight_kg,
+  activity_level,
+  diet_type,
+  goal,
+} = req.body;
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { name, age, gender, height_cm, weight_kg, goal },

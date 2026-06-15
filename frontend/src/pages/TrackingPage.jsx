@@ -72,6 +72,43 @@ const TrackingPage = () => {
     setter((current) => ({ ...current, [name]: value }));
   };
 
+  const groupedMeals = {
+  Breakfast: meals.filter(
+    (meal) => meal.meal_type === 'Breakfast'
+  ),
+
+  Lunch: meals.filter(
+    (meal) => meal.meal_type === 'Lunch'
+  ),
+
+  Dinner: meals.filter(
+    (meal) => meal.meal_type === 'Dinner'
+  ),
+
+  Snack: meals.filter(
+    (meal) => meal.meal_type === 'Snack'
+  ),
+};
+
+const totals = meals.reduce(
+  (acc, meal) => {
+    acc.calories += meal.calories || 0;
+    acc.protein += meal.protein || 0;
+    acc.carbs += meal.carbs || 0;
+    acc.fat += meal.fat || 0;
+    acc.fiber += meal.fiber || 0;
+
+    return acc;
+  },
+  {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: 0,
+  }
+);
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <header className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -162,22 +199,96 @@ const TrackingPage = () => {
           }}
         />
       </div>
+      <div className="grid gap-4 md:grid-cols-5">
+
+  <div className="rounded-xl bg-white p-4 shadow">
+    <p className="text-sm text-slate-500">Calories</p>
+    <p className="text-2xl font-bold">
+      {totals.calories}
+    </p>
+  </div>
+
+  <div className="rounded-xl bg-white p-4 shadow">
+    <p className="text-sm text-slate-500">Protein</p>
+    <p className="text-2xl font-bold">
+      {totals.protein}g
+    </p>
+  </div>
+
+  <div className="rounded-xl bg-white p-4 shadow">
+    <p className="text-sm text-slate-500">Carbs</p>
+    <p className="text-2xl font-bold">
+      {totals.carbs}g
+    </p>
+  </div>
+
+  <div className="rounded-xl bg-white p-4 shadow">
+    <p className="text-sm text-slate-500">Fat</p>
+    <p className="text-2xl font-bold">
+      {totals.fat}g
+    </p>
+  </div>
+
+  <div className="rounded-xl bg-white p-4 shadow">
+    <p className="text-sm text-slate-500">Fiber</p>
+    <p className="text-2xl font-bold">
+      {totals.fiber}g
+    </p>
+  </div>
+
+</div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <LogList
-          title="Today's Food"
-          emptyText="No food logged for this date."
-          items={meals}
-          renderItem={(meal) => (
-            <div key={meal.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold text-slate-950">{meal.name}</p>
-                <p className="text-sm text-slate-500">{meal.calories} kcal</p>
+        {<div className="space-y-4">
+
+  {Object.entries(groupedMeals).map(
+    ([mealType, items]) => (
+      <div
+        key={mealType}
+        className="rounded-xl border border-slate-200 bg-white p-4"
+      >
+        <h3 className="mb-3 text-lg font-bold">
+          {mealType}
+        </h3>
+
+        {items.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            No meals logged
+          </p>
+        ) : (
+          items.map((meal) => (
+            <div
+              key={meal.id}
+              className="mb-3 rounded-lg bg-slate-50 p-3"
+            >
+              <div className="flex justify-between">
+                <span className="font-semibold">
+                  {meal.name}
+                </span>
+
+                <span>
+                  {meal.calories} kcal
+                </span>
               </div>
-              <p className="mt-2 text-sm text-slate-600">Protein {meal.protein}g | Carbs {meal.carbs}g | Fat {meal.fat}g | Fiber {meal.fiber}g</p>
+
+              <div className="mt-2 text-sm text-slate-600">
+                Protein {meal.protein}g •
+                Carbs {meal.carbs}g •
+                Fat {meal.fat}g •
+                Fiber {meal.fiber}g
+              </div>
+
+              <div className="mt-1 text-xs text-slate-500">
+                Quantity: {meal.quantity || 100}g
+              </div>
             </div>
-          )}
-        />
+          ))
+        )}
+      </div>
+    )
+  )}
+
+</div>}
 
         <LogList
           title="Today's Exercise"

@@ -45,11 +45,30 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    target_weight_kg: {
+  type: Number,
+  min: 0,
+  default: null,
+},
+
+activity_level: {
+  type: String,
+  default: 'Moderate',
+},
+
+diet_type: {
+  type: String,
+  default: 'Balanced',
+},
     streak: {
       type: Number,
       min: 0,
       default: 0,
     },
+    last_activity_date: {
+  type: String,
+  default: null,
+},
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

@@ -13,6 +13,7 @@ import {
   getHealthScore,
   getHealthScoreHistory,
   getNutritionAdvice,
+  askCoach,
 } from '../controllers/apiController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -33,5 +34,6 @@ router.post('/water', protect, addWater);
 router.post('/waters', protect, addWater);
 router.post('/weight', protect, addWeight);
 router.post('/weights', protect, addWeight);
+router.post('/coach/chat', protect, askCoach);
 
 export default router;

@@ -5,9 +5,48 @@ import Exercise from '../models/Exercise.js';
 import WaterLog from '../models/WaterLog.js';
 import WeightLog from '../models/WeightLog.js';
 import HealthScore from '../models/HealthScore.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY
+);
 
 const getDateValue = (dateValue) => {
   return dateValue ? new Date(dateValue).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+};
+
+const updateUserStreak = async (userId) => {
+  const user = await User.findById(userId);
+
+  if (!user) return;
+
+  const today = new Date()
+    .toISOString()
+    .split('T')[0];
+
+  const yesterday = new Date(
+    Date.now() - 86400000
+  )
+    .toISOString()
+    .split('T')[0];
+
+  if (!user.last_activity_date) {
+    user.streak = 1;
+  } else if (
+    user.last_activity_date === today
+  ) {
+    return;
+  } else if (
+    user.last_activity_date === yesterday
+  ) {
+    user.streak += 1;
+  } else {
+    user.streak = 1;
+  }
+
+  user.last_activity_date = today;
+
+  await user.save();
 };
 
 const estimateCalories = (profile = {}) => {
@@ -218,17 +257,37 @@ export const getWeights = async (req, res, next) => {
 
 export const addMeal = async (req, res, next) => {
   try {
-    const { meal_date, name, calories, protein, carbs, fat, fiber } = req.body;
-    const meal = await FoodLog.create({
-      user: req.user.id,
-      meal_date: meal_date || getDateValue(),
+    const {
+      meal_date,
+      meal_type,
+      quantity,
       name,
       calories,
       protein,
       carbs,
       fat,
       fiber,
+    } = req.body;
+
+    const meal = await FoodLog.create({
+      user: req.user.id,
+
+      meal_date: meal_date || getDateValue(),
+
+      meal_type: meal_type || 'Breakfast',
+
+      quantity: quantity || 100,
+
+      name,
+
+      calories,
+      protein,
+      carbs,
+      fat,
+      fiber,
     });
+    await updateUserStreak(req.user.id);
+
     res.status(201).json(meal);
   } catch (error) {
     next(error);
@@ -245,6 +304,7 @@ export const addExercise = async (req, res, next) => {
       duration_minutes,
       calories_burned,
     });
+    await updateUserStreak(req.user.id);
     res.status(201).json(exercise);
   } catch (error) {
     next(error);
@@ -259,6 +319,7 @@ export const addWater = async (req, res, next) => {
       log_date: log_date || getDateValue(),
       amount_ml,
     });
+    await updateUserStreak(req.user.id);
     res.status(201).json(water);
   } catch (error) {
     next(error);
@@ -273,6 +334,7 @@ export const addWeight = async (req, res, next) => {
       record_date: record_date || getDateValue(),
       weight_kg,
     });
+    await updateUserStreak(req.user.id);
     res.status(201).json(weight);
   } catch (error) {
     next(error);
@@ -308,6 +370,56 @@ export const getNutritionAdvice = async (req, res, next) => {
     const advice = response.data?.candidates?.[0]?.content || response.data?.output?.[0]?.content || `Keep tracking your meals, water, and exercise consistently for better progress.`;
 
     res.json({ advice });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const askCoach = async (req, res, next) => {
+  try {
+    const { question } = req.body;
+
+    if (!question) {
+      return res.status(400).json({
+        message: 'Question is required',
+      });
+    }
+
+    const profile =
+      await User.findById(req.user.id).select(
+        'name age gender height_cm weight_kg goal'
+      );
+
+    const prompt = `
+You are HealthOS AI Coach.
+
+User Profile:
+Name: ${profile?.name || 'User'}
+Age: ${profile?.age || 'Unknown'}
+Gender: ${profile?.gender || 'Unknown'}
+Weight: ${profile?.weight_kg || 'Unknown'}kg
+Goal: ${profile?.goal || 'Stay Healthy'}
+
+User Question:
+${question}
+
+Give practical nutrition, fitness and health advice.
+Keep the answer simple and easy to understand.
+`;
+
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+    });
+
+    const result =
+      await model.generateContent(prompt);
+
+    const answer =
+      result.response.text();
+
+    res.json({
+      answer,
+    });
   } catch (error) {
     next(error);
   }
