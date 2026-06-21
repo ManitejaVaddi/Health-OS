@@ -5,11 +5,12 @@ import Exercise from '../models/Exercise.js';
 import WaterLog from '../models/WaterLog.js';
 import WeightLog from '../models/WeightLog.js';
 import HealthScore from '../models/HealthScore.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY
-);
+
+// const genAI = new GoogleGenerativeAI(
+//   process.env.GEMINI_API_KEY
+// );
 
 const getDateValue = (dateValue) => {
   return dateValue ? new Date(dateValue).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
@@ -130,6 +131,11 @@ const buildDailySummary = async (user, date) => {
   const caloriesBurned = exercises.reduce((sum, item) => sum + item.calories_burned, 0);
   const waterIntakeMl = Number(waterTotals[0]?.total_ml) || 0;
   const dailyHealthScore = calculateHealthScore(totals, waterIntakeMl, caloriesBurned, goals);
+  console.log('Meals:', meals.length);
+console.log('Totals:', totals);
+console.log('Water:', waterIntakeMl);
+console.log('Exercise Calories:', caloriesBurned);
+console.log('Score:', dailyHealthScore);
 
   await HealthScore.findOneAndUpdate(
     { user: userId, score_date: date },
@@ -341,38 +347,10 @@ export const addWeight = async (req, res, next) => {
   }
 };
 
-export const getNutritionAdvice = async (req, res, next) => {
-  try {
-    const profile = await User.findById(req.user.id).select('name age gender height_cm weight_kg goal') || {};
-    const prompt = `You are a helpful nutrition coach for a user who is ${profile.age || 'an adult'} years old, ${profile.gender || 'of unknown gender'}, with a goal to ${profile.goal || 'stay healthy'}. Provide a concise, positive nutrition and hydration tip that helps them balance meals, track macros, and stay consistent.`;
-
-    if (!process.env.GEMINI_API_KEY) {
-      return res.json({
-        advice: `Welcome to NutriAI! Focus on balanced meals with lean protein, whole grains, and vegetables, drink water steadily through the day, and log your progress daily. Update your profile and use the dashboard to stay on track.`,
-      });
-    }
-
-    const response = await axios.post(
-      'https://gemini.googleapis.com/v1/models/chat-bison-001:generateMessage',
-      {
-        model: 'chat-bison-001',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    const advice = response.data?.candidates?.[0]?.content || response.data?.output?.[0]?.content || `Keep tracking your meals, water, and exercise consistently for better progress.`;
-
-    res.json({ advice });
-  } catch (error) {
-    next(error);
-  }
+export const getNutritionAdvice = async (req, res) => {
+  res.json({
+    advice: 'Welcome to HealthOS AI Coach',
+  });
 };
 
 export const askCoach = async (req, res, next) => {
@@ -385,10 +363,9 @@ export const askCoach = async (req, res, next) => {
       });
     }
 
-    const profile =
-      await User.findById(req.user.id).select(
-        'name age gender height_cm weight_kg goal'
-      );
+    const profile = await User.findById(req.user.id).select(
+      'name age gender height_cm weight_kg goal'
+    );
 
     const prompt = `
 You are HealthOS AI Coach.
@@ -397,30 +374,44 @@ User Profile:
 Name: ${profile?.name || 'User'}
 Age: ${profile?.age || 'Unknown'}
 Gender: ${profile?.gender || 'Unknown'}
-Weight: ${profile?.weight_kg || 'Unknown'}kg
+Weight: ${profile?.weight_kg || 'Unknown'} kg
 Goal: ${profile?.goal || 'Stay Healthy'}
 
 User Question:
 ${question}
 
-Give practical nutrition, fitness and health advice.
-Keep the answer simple and easy to understand.
+Give practical nutrition, fitness, diet and health advice.
+Keep answers simple and beginner friendly.
 `;
 
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-    });
-
-    const result =
-      await model.generateContent(prompt);
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'meta-llama/llama-3.1-8b-instruct',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     const answer =
-      result.response.text();
+      response.data.choices?.[0]?.message?.content ||
+      'Unable to generate response.';
 
     res.json({
       answer,
     });
   } catch (error) {
+    console.error('OPENROUTER ERROR:', error.response?.data || error);
     next(error);
   }
 };
