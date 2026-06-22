@@ -1,6 +1,24 @@
 import { Link, useNavigate } from 'react-router-dom';
-
+import { useEffect, useState } from 'react';
+import api from '../../api/apiClient';
 const Header = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const response = await api.get('/auth/me');
+
+      if (response.data.role === 'admin') {
+        setIsAdmin(true);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  fetchUser();
+}, []);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -24,6 +42,18 @@ const Header = () => {
           <Link to="/coach" className="rounded-full px-4 py-2 hover:bg-slate-100">AI Coach</Link>
           <Link to="/profile" className="rounded-full px-4 py-2 hover:bg-slate-100">Profile</Link>
           <Link to="/progress-center" className="rounded-full px-4 py-2 hover:bg-slate-100" >Progress Center</Link>
+          <Link to="/feedback" className="rounded-full px-4 py-2 hover:bg-slate-100" > Feedback </Link>
+          {isAdmin && (
+  <Link to="/admin" className="rounded-full px-4 py-2 hover:bg-slate-100"> Admin</Link>
+)}
+{isAdmin && (
+  <Link
+    to="/admin-feedback"
+    className="rounded-full px-4 py-2 hover:bg-slate-100"
+  >
+    Feedback
+  </Link>
+)}
           <button
             onClick={handleLogout}
             className="rounded-full bg-brand-500 px-4 py-2 text-white hover:bg-brand-600"

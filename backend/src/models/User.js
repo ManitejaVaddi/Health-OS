@@ -60,6 +60,12 @@ diet_type: {
   type: String,
   default: 'Balanced',
 },
+
+role: {
+  type: String,
+  enum: ['user', 'admin'],
+  default: 'user',
+},
     streak: {
       type: Number,
       min: 0,

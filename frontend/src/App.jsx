@@ -10,6 +10,9 @@ import HistoryPage from './pages/HistoryPage';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 import ProgressCenterPage from './pages/ProgressCenterPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import FeedbackPage from './pages/FeedbackPage';
+import AdminFeedbackPage from './pages/AdminFeedbackPage';
 
 function App() {
   return (
@@ -26,6 +29,17 @@ function App() {
         <Route path="/progress-center" element={<ProgressCenterPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/admin" element={<AdminDashboardPage />} />
+      <Route
+  path="/feedback"
+  element={<FeedbackPage />}
+/>
+<Route
+  path="/admin-feedback"
+  element={
+    <AdminFeedbackPage />
+  }
+/>
     </Routes>
   );
 }
